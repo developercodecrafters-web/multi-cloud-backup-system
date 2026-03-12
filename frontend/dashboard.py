@@ -1,0 +1,538 @@
+﻿import os
+import sys
+import time
+from datetime import datetime
+
+import streamlit as st
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+sys.path.append(PROJECT_ROOT)
+
+from backend.backup_manager import run_backup
+from backend.performance_monitor import load_metrics, compute_derived_metrics
+from backend.logger import LOG_FILE
+
+DATASET_DIR = os.path.join(PROJECT_ROOT, "dataset")
+
+
+st.set_page_config(page_title="Multi-Cloud Hybrid Backup", layout="wide")
+
+st.markdown(
+    """
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+        html, body, [class*="css"]  {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .stApp {
+            background: radial-gradient(1200px 800px at 20% -10%, #1c2a44 0%, rgba(28,42,68,0) 55%),
+                        radial-gradient(1000px 600px at 110% 10%, #0f5b5b 0%, rgba(15,91,91,0) 55%),
+                        linear-gradient(180deg, #0b111a 0%, #0b141f 100%);
+        }
+
+        .hero {
+            padding: 18px 22px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(18,25,38,0.9) 0%, rgba(20,45,58,0.85) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+        }
+
+        .hero-title {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #eaf0ff;
+        }
+
+        .hero-subtitle {
+            color: #a8b3c7;
+            font-size: 15px;
+            margin-top: 4px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(77, 205, 123, 0.15);
+            color: #6be18f;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(107, 225, 143, 0.35);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e6ecf8;
+            margin: 6px 0 10px 0;
+        }
+
+        .card {
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(17, 25, 40, 0.85);
+            border: 1px solid rgba(255,255,255,0.07);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+        }
+
+        .kpi {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .kpi .label {
+            color: #a9b7d0;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .kpi .value {
+            color: #eaf0ff;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .kpi .delta {
+            color: #6be18f;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: rgba(110, 170, 255, 0.15);
+            color: #8dbbff;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid rgba(110, 170, 255, 0.35);
+        }
+
+        .panel {
+            padding: 18px;
+            border-radius: 14px;
+            background: rgba(10, 16, 26, 0.9);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .muted {
+            color: #8c99b2;
+            font-size: 13px;
+        }
+
+        .glow {
+            animation: pulse 3.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 rgba(107, 225, 143, 0.0); }
+            50% { box-shadow: 0 0 24px rgba(107, 225, 143, 0.25); }
+            100% { box-shadow: 0 0 0 rgba(107, 225, 143, 0.0); }
+        }
+
+        .file-table {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stButton>button {
+            background: linear-gradient(120deg, #3a7bd5, #00d2ff);
+            color: #0b111a;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+        }
+
+        .stButton>button:hover {
+            filter: brightness(1.05);
+        }
+
+        .stTextInput>div>div>input {
+            border-radius: 10px;
+        }
+
+        .stFileUploader>div>div {
+            border-radius: 12px;
+            border: 1px dashed rgba(255,255,255,0.2);
+            background: rgba(12, 20, 32, 0.6);
+        }
+
+        .stTextArea textarea {
+            border-radius: 12px;
+            background: rgba(12, 20, 32, 0.6);
+        }
+
+        .stSidebar {
+            background: linear-gradient(180deg, #0b111a 0%, #0d1622 100%);
+            border-right: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .stSidebar .block-container {
+            padding-top: 28px;
+        }
+
+        .stSidebar h1, .stSidebar h2, .stSidebar h3 {
+            color: #e6ecf8;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .stSidebar [data-testid=\"stRadio\"] label {
+            font-weight: 600;
+            color: #d7e2f7;
+        }
+
+        .stSidebar [data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label {
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            background: rgba(17, 25, 40, 0.5);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .stSidebar [data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label:hover {
+            background: rgba(35, 52, 82, 0.65);
+            border: 1px solid rgba(110, 170, 255, 0.35);
+        }
+
+        .stSidebar [data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label span {
+            color: #e6ecf8;
+        }
+
+        /* Top navigation bar (specific class requested + safe fallback selectors) */
+        .stAppDeployButton,
+        .st-emotion-cache-1j22a0y.est0q594,
+        div[data-testid=\"stHorizontalBlock\"]:first-of-type {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(11, 17, 26, 0.85);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 8px 12px;
+            backdrop-filter: blur(8px);
+            margin-bottom: 14px;
+        }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label {
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(17, 25, 40, 0.65);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.2s ease;
+        }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label:hover {
+            background: rgba(58, 123, 213, 0.2);
+            border-color: rgba(58, 123, 213, 0.5);
+        }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label span {
+            color: #e6ecf8;
+            font-weight: 600;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+if "page" not in st.session_state:
+    st.session_state.page = "Home Dashboard"
+
+st.markdown(
+    "<div class='section-title' style='margin-top:6px;'>Navigation</div>",
+    unsafe_allow_html=True,
+)
+page = st.radio(
+    "Go to",
+    [
+        "Home Dashboard",
+        "Upload Supply Chain Files",
+        "Start Backup",
+        "Backup Logs",
+        "Performance Metrics",
+    ],
+    horizontal=True,
+    key="page",
+    label_visibility="collapsed",
+)
+
+
+def list_dataset_files() -> list:
+    os.makedirs(DATASET_DIR, exist_ok=True)
+    files = []
+    for filename in os.listdir(DATASET_DIR):
+        path = os.path.join(DATASET_DIR, filename)
+        if os.path.isfile(path):
+            files.append(
+                {
+                    "file": filename,
+                    "size_kb": round(os.path.getsize(path) / 1024, 2),
+                    "last_modified": datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M"),
+                }
+            )
+    return files
+
+
+def kpi_card(title: str, value: str, delta: str = "", badge: str = "") -> None:
+    st.markdown(
+        f"""
+        <div class="card">
+            <div class="kpi">
+                <div>
+                    <div class="label">{title}</div>
+                    <div class="value">{value}</div>
+                </div>
+                <div>
+                    <div class="delta">{delta}</div>
+                    <div class="badge">{badge}</div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+if page == "Home Dashboard":
+    metrics = load_metrics()
+    derived = compute_derived_metrics(metrics)
+
+    total_files = len([f for f in os.listdir(DATASET_DIR) if os.path.isfile(os.path.join(DATASET_DIR, f))])
+    total_size_mb = sum(
+        os.path.getsize(os.path.join(DATASET_DIR, f))
+        for f in os.listdir(DATASET_DIR)
+        if os.path.isfile(os.path.join(DATASET_DIR, f))
+    ) / (1024 * 1024)
+
+    last_backup_time = metrics.get("last_backup_time") or "No backups yet"
+
+    st.markdown(
+        f"""
+        <div class="hero glow">
+            <div class="pill">SYSTEM ONLINE</div>
+            <div class="hero-title">Multi-Cloud Hybrid Backup Strategy</div>
+            <div class="hero-subtitle">Supply chain data resilience with redundancy, failover, and hybrid storage.</div>
+            <div class="muted" style="margin-top:8px;">Last backup: {last_backup_time}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.write("")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        kpi_card("Total Backups", str(metrics.get("total_backups", 0)), badge="Lifecycle")
+    with col2:
+        kpi_card("Success Rate", f"{derived['success_rate']}%", badge="Reliability")
+    with col3:
+        kpi_card("Failover Count", str(metrics.get("failover_count", 0)), badge="Continuity")
+    with col4:
+        kpi_card("Dataset Volume", f"{round(total_size_mb, 2)} MB", badge=f"{total_files} files")
+
+    st.write("")
+    col_left, col_right = st.columns([2, 1])
+
+    with col_left:
+        st.markdown("<div class='section-title'>Operational Overview</div>", unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="panel">
+                <div class="muted">Local backup runs first for speed. Cloud backup ensures redundancy and off-site resilience.</div>
+                <div style="margin-top:12px;">
+                    <span class="badge">Local Storage</span>
+                    <span class="badge" style="margin-left:6px;">AWS S3</span>
+                    <span class="badge" style="margin-left:6px;">Failover Ready</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.write("")
+        st.markdown("<div class='section-title'>Dataset Snapshot</div>", unsafe_allow_html=True)
+        files = list_dataset_files()
+        if files:
+            st.dataframe(files, use_container_width=True, hide_index=True)
+        else:
+            st.info("No dataset files found. Upload files to get started.")
+
+    with col_right:
+        st.markdown("<div class='section-title'>Quick Actions</div>", unsafe_allow_html=True)
+        action_col = st.container()
+        with action_col:
+            if st.button("Go to Start Backup"):
+                st.session_state.page = "Start Backup"
+            if st.button("Upload New Files"):
+                st.session_state.page = "Upload Supply Chain Files"
+
+        st.write("")
+        st.markdown("<div class='section-title'>Health Monitor</div>", unsafe_allow_html=True)
+        st.markdown("<div class='panel'>", unsafe_allow_html=True)
+        st.write("Local Backup Readiness")
+        st.progress(95)
+        st.write("Cloud Connectivity")
+        st.progress(90)
+        st.write("Failover Preparedness")
+        st.progress(92)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+elif page == "Upload Supply Chain Files":
+    st.markdown("<div class='hero'><div class='hero-title'>Upload Supply Chain Files</div><div class='hero-subtitle'>Ingest new inventory, shipments, suppliers, and warehouse records.</div></div>", unsafe_allow_html=True)
+
+    st.write("")
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        uploaded_files = st.file_uploader(
+            "Drop CSV or Excel files here",
+            type=["csv", "xlsx"],
+            accept_multiple_files=True,
+        )
+
+        if uploaded_files:
+            os.makedirs(DATASET_DIR, exist_ok=True)
+            for uploaded_file in uploaded_files:
+                file_path = os.path.join(DATASET_DIR, uploaded_file.name)
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+            st.success(f"Uploaded {len(uploaded_files)} file(s) to dataset.")
+
+    with col2:
+        st.markdown("<div class='section-title'>Upload Tips</div>", unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="panel">
+                <div class="muted">Recommended file types: CSV or XLSX.</div>
+                <div class="muted">Keep filenames unique to avoid overwrites.</div>
+                <div class="muted">Uploads are stored in the local dataset directory.</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.write("")
+    st.markdown("<div class='section-title'>Current Dataset</div>", unsafe_allow_html=True)
+    files = list_dataset_files()
+    if files:
+        st.dataframe(files, use_container_width=True, hide_index=True)
+    else:
+        st.info("No dataset files found yet.")
+
+
+elif page == "Start Backup":
+    st.markdown("<div class='hero'><div class='hero-title'>Start Backup</div><div class='hero-subtitle'>Run local backup first, then cloud backup for redundancy.</div></div>", unsafe_allow_html=True)
+
+    st.write("")
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        with st.form("backup_form"):
+            bucket_name = st.text_input("AWS S3 Bucket Name", placeholder="your-s3-bucket-name")
+            s3_prefix = st.text_input("S3 Prefix (Optional)", value="supply-chain-backups")
+            submitted = st.form_submit_button("Start Backup")
+
+        if submitted:
+            if not bucket_name:
+                st.error("Please provide an S3 bucket name.")
+            else:
+                with st.spinner("Running backup..."):
+                    result = run_backup(cloud_bucket=bucket_name, s3_prefix=s3_prefix)
+                    time.sleep(0.5)
+
+                local = result["result"]["local"]
+                cloud = result["result"]["cloud"]
+
+                st.markdown("<div class='section-title'>Results</div>", unsafe_allow_html=True)
+                st.markdown("<div class='panel'>", unsafe_allow_html=True)
+                st.write(f"Local Backup: {'Success' if local['success'] else 'Failed'}")
+                st.write(f"Cloud Backup: {'Success' if cloud['success'] else 'Failed'}")
+                if cloud["error"]:
+                    st.write(f"Cloud Error: {cloud['error']}")
+                st.write(f"Files Processed: {result['files_processed']}")
+                st.write(f"Backup Time: {result['duration']} seconds")
+                st.markdown("</div>", unsafe_allow_html=True)
+
+    with col2:
+        st.markdown("<div class='section-title'>Execution Summary</div>", unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="panel">
+                <div class="muted">Sequence:</div>
+                <div class="muted">1. Local backup to `backup/local_backup`</div>
+                <div class="muted">2. Cloud backup to AWS S3</div>
+                <div class="muted">3. Failover to cloud if local fails</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.write("")
+        st.markdown("<div class='section-title'>Credentials</div>", unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="panel">
+                <div class="muted">Set AWS credentials via environment variables:</div>
+                <div class="muted">AWS_ACCESS_KEY_ID</div>
+                <div class="muted">AWS_SECRET_ACCESS_KEY</div>
+                <div class="muted">AWS_DEFAULT_REGION</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+elif page == "Backup Logs":
+    st.markdown("<div class='hero'><div class='hero-title'>Backup Logs</div><div class='hero-subtitle'>Operational history and events.</div></div>", unsafe_allow_html=True)
+
+    st.write("")
+    if os.path.exists(LOG_FILE):
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            logs = f.read()
+        st.text_area("Logs", logs, height=420)
+    else:
+        st.info("No logs found yet.")
+
+
+elif page == "Performance Metrics":
+    st.markdown("<div class='hero'><div class='hero-title'>Performance Metrics</div><div class='hero-subtitle'>Monitoring backup efficiency and reliability.</div></div>", unsafe_allow_html=True)
+
+    st.write("")
+    metrics = load_metrics()
+    derived = compute_derived_metrics(metrics)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        kpi_card("Total Backups", str(metrics.get("total_backups", 0)), badge="Lifecycle")
+    with col2:
+        kpi_card("Failover Count", str(metrics.get("failover_count", 0)), badge="Continuity")
+    with col3:
+        kpi_card("Success Rate", f"{derived['success_rate']}%", badge="Reliability")
+
+    st.write("")
+    st.markdown("<div class='section-title'>Operational Timing</div>", unsafe_allow_html=True)
+    st.markdown("<div class='panel'>", unsafe_allow_html=True)
+    st.write("Average Backup Time (seconds):", derived["average_backup_time"])
+    st.write("Total Files Processed:", metrics.get("total_files", 0))
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.write("")
+    st.markdown("<div class='section-title'>Raw Metrics</div>", unsafe_allow_html=True)
+    st.json(metrics)
