@@ -1,0 +1,16 @@
+[2026-03-12 22:15:41] Backup Started
+[2026-03-12 22:15:41] Local Backup Success
+[2026-03-12 22:15:44] Cloud Backup Failed: AWS error: Failed to connect to proxy URL: "http://0"
+[2026-03-12 22:15:44] Backup Completed
+[2026-03-12 22:18:10] Backup Started
+[2026-03-12 22:18:10] Local Backup Success
+[2026-03-12 22:18:13] Cloud Backup Failed: AWS error: Failed to connect to proxy URL: "http://0"
+[2026-03-12 22:18:13] Backup Completed
+[2026-03-12 22:19:53] Backup Started
+[2026-03-12 22:19:53] Local Backup Success
+[2026-03-12 22:19:56] Cloud Backup Failed: AWS error: Failed to connect to proxy URL: "http://0"
+[2026-03-12 22:19:56] Backup Completed
+[2026-03-12 22:21:38] Backup Started
+[2026-03-12 22:21:38] Local Backup Success
+[2026-03-12 22:21:41] Cloud Backup Failed: AWS error: Failed to connect to proxy URL: "http://0"
+[2026-03-12 22:21:41] Backup Completed

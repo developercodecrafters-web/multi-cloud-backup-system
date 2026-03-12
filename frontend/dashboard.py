@@ -459,9 +459,14 @@ elif page == "Start Backup":
 
                 local = result["result"]["local"]
                 cloud = result["result"]["cloud"]
+                overall_success = local["success"] or cloud["success"]
 
                 st.markdown("<div class='section-title'>Results</div>", unsafe_allow_html=True)
                 st.markdown("<div class='panel'>", unsafe_allow_html=True)
+                if overall_success:
+                    st.success("Backup completed successfully.")
+                else:
+                    st.error("Backup failed. Please review the errors below.")
                 st.write(f"Local Backup: {'Success' if local['success'] else 'Failed'}")
                 st.write(f"Cloud Backup: {'Success' if cloud['success'] else 'Failed'}")
                 if cloud["error"]:

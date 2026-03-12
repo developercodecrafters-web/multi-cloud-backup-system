@@ -1,0 +1,5 @@
+﻿supplier_id,supplier_name,region,lead_time_days,contact
+SUP-10,Alpha Metals,Midwest,12,alpha@suppliers.com
+SUP-11,Bravo Plastics,Southeast,9,bravo@suppliers.com
+SUP-12,Delta Textiles,West,15,delta@suppliers.com
+SUP-13,Orion Parts,Northeast,7,orion@suppliers.com
