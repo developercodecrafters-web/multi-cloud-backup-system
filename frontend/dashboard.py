@@ -254,6 +254,172 @@ st.markdown(
 
 if "page" not in st.session_state:
     st.session_state.page = "Home Dashboard"
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "current_user" not in st.session_state:
+    st.session_state.current_user = ""
+if "users" not in st.session_state:
+    st.session_state.users = {}
+
+
+def render_auth_gateway() -> None:
+    st.markdown(
+        """
+        <style>
+            .auth-card {
+                max-width: 520px;
+                margin: 0 auto;
+                padding: 28px 26px;
+                border-radius: 14px;
+                background: rgba(15, 23, 42, 0.9);
+                border: 1px solid rgba(255,255,255,0.08);
+                box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+            }
+
+            div[data-testid="stTabs"],
+            div[data-testid="stForm"] {
+                max-width: 520px;
+                margin: 0 auto;
+            }
+
+            div[data-testid="stForm"] .stButton {
+                display: flex;
+                justify-content: center;
+            }
+
+            div[data-testid="stForm"] .stButton > button {
+                margin: 0 auto;
+                display: block;
+            }
+
+            div[data-testid="stForm"] input {
+                background: #0b1220;
+                border: 1px solid rgba(255,255,255,0.12);
+                color: #e2e8f0;
+                padding: 12px 14px;
+                border-radius: 10px;
+            }
+
+            div[data-testid="stForm"] input:focus {
+                border-color: rgba(59, 130, 246, 0.85);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            }
+
+            div[data-testid="stForm"] label {
+                font-weight: 600;
+                color: #cfd8ea;
+                letter-spacing: 0.15px;
+            }
+
+            div[data-testid="stTabs"] > div[role="tablist"] {
+                display: flex;
+                justify-content: center;
+                gap: 8px;
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+                padding-bottom: 8px;
+                margin-bottom: 14px;
+            }
+
+            div[data-testid="stTabs"] button[role="tab"] {
+                background: transparent;
+                border: none;
+                color: #9fb0cc;
+                padding: 6px 10px;
+                font-weight: 600;
+            }
+
+            div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+                color: #e6f0ff;
+                border-bottom: 2px solid #3b82f6;
+            }
+
+            div[data-testid="stForm"] button {
+                min-width: 180px;
+                border-radius: 10px;
+            }
+
+            .auth-title {
+                text-align: center;
+                font-size: 26px;
+                font-weight: 700;
+                color: #e6f0ff;
+                margin-bottom: 6px;
+            }
+
+            .auth-subtitle {
+                text-align: center;
+                color: #9fb0cc;
+                font-size: 14px;
+                margin-bottom: 14px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("<div class='auth-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='auth-title'>Welcome Back</div>", unsafe_allow_html=True)
+    st.markdown("<div class='auth-subtitle'>Please sign in or login first.</div>", unsafe_allow_html=True)
+    login_tab, register_tab = st.tabs(["Login", "Register"])
+
+    with login_tab:
+        with st.form("login_form"):
+            username = st.text_input("User Name", placeholder="e.g. username")
+            password = st.text_input("Password", type="password", placeholder="Your password")
+            submitted = st.form_submit_button("Login")
+
+        if submitted:
+            user_record = st.session_state.users.get(username)
+            if not user_record:
+                st.error("Account not found. Please register first.")
+            elif user_record != password:
+                st.error("Incorrect password. Please try again.")
+            else:
+                st.session_state.authenticated = True
+                st.session_state.current_user = username
+                st.session_state.page = "Home Dashboard"
+                st.success("Login successful. Redirecting to the dashboard...")
+                st.rerun()
+
+    with register_tab:
+        with st.form("register_form"):
+            new_username = st.text_input("Choose a User Name")
+            new_password = st.text_input("Create a Password", type="password")
+            confirm_password = st.text_input("Confirm Password", type="password")
+            submitted = st.form_submit_button("Register")
+
+        if submitted:
+            if not new_username or not new_password:
+                st.error("Please fill in all fields.")
+            elif new_username in st.session_state.users:
+                st.error("That username is already taken.")
+            elif len(new_password) < 6:
+                st.error("Password must be at least 6 characters.")
+            elif new_password != confirm_password:
+                st.error("Passwords do not match.")
+            else:
+                st.session_state.users[new_username] = new_password
+                st.success("Registration complete. Please login to continue.")
+                st.toast("Registration successful.", icon="✅")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+if not st.session_state.authenticated:
+    render_auth_gateway()
+    st.stop()
+
+header_left, header_right = st.columns([3, 1])
+with header_left:
+    st.markdown(
+        f"<div class='section-title' style='margin-top:6px;'>Signed in as {st.session_state.current_user}</div>",
+        unsafe_allow_html=True,
+    )
+with header_right:
+    if st.button("Logout"):
+        st.session_state.authenticated = False
+        st.session_state.current_user = ""
+        st.session_state.page = "Home Dashboard"
+        st.rerun()
 
 st.markdown(
     "<div class='section-title' style='margin-top:6px;'>Navigation</div>",
