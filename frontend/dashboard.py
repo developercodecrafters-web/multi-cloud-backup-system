@@ -27,9 +27,13 @@ st.markdown(
         }
 
         .stApp {
-            background: radial-gradient(1200px 800px at 20% -10%, #1c2a44 0%, rgba(28,42,68,0) 55%),
-                        radial-gradient(1000px 600px at 110% 10%, #0f5b5b 0%, rgba(15,91,91,0) 55%),
-                        linear-gradient(180deg, #0b111a 0%, #0b141f 100%);
+            background: radial-gradient(1200px 800px at 20% -10%, #3f2b50 0%, rgba(63,43,80,0) 55%),
+                        radial-gradient(1000px 600px at 110% 10%, #134e4a 0%, rgba(19,78,74,0) 55%),
+                        linear-gradient(180deg, #111827 0%, #0b1220 100%);
+        }
+
+        .block-container {
+            padding-top: 1rem;
         }
 
         .hero {
@@ -161,6 +165,12 @@ st.markdown(
             border-radius: 10px;
         }
 
+        /* Hide browser-native password reveal controls to avoid duplicate eye icon */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
         .stFileUploader>div>div {
             border-radius: 12px;
             border: 1px dashed rgba(255,255,255,0.2);
@@ -209,19 +219,11 @@ st.markdown(
             color: #e6ecf8;
         }
 
-        /* Top navigation bar (specific class requested + safe fallback selectors) */
-        .stAppDeployButton,
-        .st-emotion-cache-1j22a0y.est0q594,
-        div[data-testid=\"stHorizontalBlock\"]:first-of-type {
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: rgba(11, 17, 26, 0.85);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px;
-            padding: 8px 12px;
-            backdrop-filter: blur(8px);
-            margin-bottom: 14px;
+        /* Hide Streamlit top bar/header */
+        header[data-testid="stHeader"],
+        div[data-testid="stToolbar"],
+        div[data-testid="stDecoration"] {
+            display: none;
         }
 
         div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] {
@@ -266,52 +268,59 @@ def render_auth_gateway() -> None:
     st.markdown(
         """
         <style>
-            .auth-card {
-                max-width: 520px;
+            .auth-shell {
+                padding-top: 28px;
+            }
+
+            div[data-testid="stVerticalBlockBorderWrapper"] {
+                max-width: 560px;
                 margin: 0 auto;
-                padding: 28px 26px;
+                padding: 18px 18px 14px 18px;
                 border-radius: 14px;
                 background: rgba(15, 23, 42, 0.9);
                 border: 1px solid rgba(255,255,255,0.08);
                 box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
             }
 
-            div[data-testid="stTabs"],
-            div[data-testid="stForm"] {
-                max-width: 520px;
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTabs"],
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] {
+                max-width: 100%;
                 margin: 0 auto;
             }
 
-            div[data-testid="stForm"] .stButton {
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] .stButton {
                 display: flex;
                 justify-content: center;
             }
 
-            div[data-testid="stForm"] .stButton > button {
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] .stButton > button {
                 margin: 0 auto;
                 display: block;
+                width: 220px;
             }
 
-            div[data-testid="stForm"] input {
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-baseweb="input"] {
                 background: #0b1220;
                 border: 1px solid rgba(255,255,255,0.12);
-                color: #e2e8f0;
-                padding: 12px 14px;
                 border-radius: 10px;
             }
 
-            div[data-testid="stForm"] input:focus {
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-baseweb="input"] input {
+                color: #e2e8f0;
+            }
+
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-baseweb="input"]:focus-within {
                 border-color: rgba(59, 130, 246, 0.85);
                 box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
             }
 
-            div[data-testid="stForm"] label {
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] label {
                 font-weight: 600;
                 color: #cfd8ea;
                 letter-spacing: 0.15px;
             }
 
-            div[data-testid="stTabs"] > div[role="tablist"] {
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTabs"] > div[role="tablist"] {
                 display: flex;
                 justify-content: center;
                 gap: 8px;
@@ -320,7 +329,7 @@ def render_auth_gateway() -> None:
                 margin-bottom: 14px;
             }
 
-            div[data-testid="stTabs"] button[role="tab"] {
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTabs"] button[role="tab"] {
                 background: transparent;
                 border: none;
                 color: #9fb0cc;
@@ -328,12 +337,12 @@ def render_auth_gateway() -> None:
                 font-weight: 600;
             }
 
-            div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
                 color: #e6f0ff;
                 border-bottom: 2px solid #3b82f6;
             }
 
-            div[data-testid="stForm"] button {
+            div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stForm"] button {
                 min-width: 180px;
                 border-radius: 10px;
             }
@@ -357,58 +366,61 @@ def render_auth_gateway() -> None:
         unsafe_allow_html=True,
     )
 
-    st.markdown("<div class='auth-card'>", unsafe_allow_html=True)
-    st.markdown("<div class='auth-title'>Welcome Back</div>", unsafe_allow_html=True)
-    st.markdown("<div class='auth-subtitle'>Please sign in or login first.</div>", unsafe_allow_html=True)
-    login_tab, register_tab = st.tabs(["Login", "Register"])
+    _, center_col, _ = st.columns([1.2, 1.5, 1.2])
+    with center_col:
+        st.markdown("<div class='auth-shell'></div>", unsafe_allow_html=True)
+        auth_container = st.container(border=True)
+        with auth_container:
+            st.markdown("<div class='auth-title'>Welcome Back</div>", unsafe_allow_html=True)
+            st.markdown("<div class='auth-subtitle'>Please sign in or login first.</div>", unsafe_allow_html=True)
+            login_tab, register_tab = st.tabs(["Login", "Register"])
 
-    with login_tab:
-        with st.form("login_form"):
-            username = st.text_input("User Name", placeholder="e.g. username")
-            password = st.text_input("Password", type="password", placeholder="Your password")
-            submitted = st.form_submit_button("Login")
+            with login_tab:
+                with st.form("login_form"):
+                    username = st.text_input("User Name", placeholder="e.g. username")
+                    password = st.text_input("Password", type="password", placeholder="Your password")
+                    submitted = st.form_submit_button("Login")
 
-        if submitted:
-            user_record = st.session_state.users.get(username)
-            if not user_record:
-                st.error("Account not found. Please register first.")
-            elif user_record != password:
-                st.error("Incorrect password. Please try again.")
-            else:
-                st.session_state.authenticated = True
-                st.session_state.current_user = username
-                st.session_state.page = "Home Dashboard"
-                st.success("Login successful. Redirecting to the dashboard...")
-                st.rerun()
+                if submitted:
+                    user_record = st.session_state.users.get(username)
+                    if not user_record:
+                        st.error("Account not found. Please register first.")
+                    elif user_record != password:
+                        st.error("Incorrect password. Please try again.")
+                    else:
+                        st.session_state.authenticated = True
+                        st.session_state.current_user = username
+                        st.session_state.page = "Home Dashboard"
+                        st.success("Login successful. Redirecting to the dashboard...")
+                        st.rerun()
 
-    with register_tab:
-        with st.form("register_form"):
-            new_username = st.text_input("Choose a User Name")
-            new_password = st.text_input("Create a Password", type="password")
-            confirm_password = st.text_input("Confirm Password", type="password")
-            submitted = st.form_submit_button("Register")
+            with register_tab:
+                with st.form("register_form"):
+                    new_username = st.text_input("Choose a User Name")
+                    new_password = st.text_input("Create a Password", type="password")
+                    confirm_password = st.text_input("Confirm Password", type="password")
+                    submitted = st.form_submit_button("Register")
 
-        if submitted:
-            if not new_username or not new_password:
-                st.error("Please fill in all fields.")
-            elif new_username in st.session_state.users:
-                st.error("That username is already taken.")
-            elif len(new_password) < 6:
-                st.error("Password must be at least 6 characters.")
-            elif new_password != confirm_password:
-                st.error("Passwords do not match.")
-            else:
-                st.session_state.users[new_username] = new_password
-                st.success("Registration complete. Please login to continue.")
-                st.toast("Registration successful.", icon="✅")
-    st.markdown("</div>", unsafe_allow_html=True)
+                if submitted:
+                    if not new_username or not new_password:
+                        st.error("Please fill in all fields.")
+                    elif new_username in st.session_state.users:
+                        st.error("That username is already taken.")
+                    elif len(new_password) < 6:
+                        st.error("Password must be at least 6 characters.")
+                    elif new_password != confirm_password:
+                        st.error("Passwords do not match.")
+                    else:
+                        st.session_state.users[new_username] = new_password
+                        st.success("Registration complete. Please login to continue.")
+                        st.toast("Registration successful.", icon="✅")
 
 
 if not st.session_state.authenticated:
     render_auth_gateway()
     st.stop()
 
-header_left, header_right = st.columns([3, 1])
+header_left, _, header_right = st.columns([8, 1, 1])
 with header_left:
     st.markdown(
         f"<div class='section-title' style='margin-top:6px;'>Signed in as {st.session_state.current_user}</div>",
