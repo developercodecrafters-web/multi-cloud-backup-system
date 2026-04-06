@@ -33,7 +33,27 @@ st.markdown(
         }
 
         .block-container {
-            padding-top: 1rem;
+            padding-top: 0.35rem;
+        }
+
+        .top-brand {
+            color: #e8f1fb;
+            font-size: 38px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .top-brand-dot {
+            color: #ffd95a;
+        }
+
+        .nav-divider {
+            height: 2px;
+            margin: 8px 0 14px 0;
+            background: linear-gradient(90deg, rgba(255, 217, 90, 0.9) 0%, rgba(255, 217, 90, 0.2) 100%);
+            border-radius: 999px;
         }
 
         .hero {
@@ -249,6 +269,31 @@ st.markdown(
             color: #e6ecf8;
             font-weight: 600;
         }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] {
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label {
+            padding: 4px 8px;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+        }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+        }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label span {
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #eaf0ff;
+            font-weight: 700;
+        }
     </style>
     """,
     unsafe_allow_html=True,
@@ -420,39 +465,53 @@ if not st.session_state.authenticated:
     render_auth_gateway()
     st.stop()
 
-header_left, _, header_right = st.columns([8, 1, 1])
-with header_left:
-    st.markdown(
-        f"<div class='section-title' style='margin-top:6px;'>Signed in as {st.session_state.current_user}</div>",
-        unsafe_allow_html=True,
-    )
-with header_right:
-    if st.button("Logout"):
-        st.session_state.authenticated = False
-        st.session_state.current_user = ""
-        st.session_state.page = "Home Dashboard"
-        st.rerun()
+NAV_OPTIONS = {
+    "Home Dashboard": "Home Dashboard",
+    "Upload Chain Files": "Upload Supply Chain Files",
+    "Start Backup": "Start Backup",
+    "Backup Logs": "Backup Logs",
+    "Performance Metrics": "Performance Metrics",
+}
 
-st.markdown(
-    "<div class='section-title' style='margin-top:6px;'>Navigation</div>",
-    unsafe_allow_html=True,
+selected_label = next(
+    (label for label, value in NAV_OPTIONS.items() if value == st.session_state.page),
+    "Home Dashboard",
 )
-page = st.radio(
-    "Go to",
-    [
-        "Home Dashboard",
-        "Upload Supply Chain Files",
-        "Start Backup",
-        "Backup Logs",
-        "Performance Metrics",
-    ],
-    horizontal=True,
-    key="page",
-    label_visibility="collapsed",
-)
+if "navbar_selection" not in st.session_state:
+    st.session_state.navbar_selection = selected_label
+
+brand_col, nav_col, profile_col = st.columns([1.1, 5.0, 0.7], vertical_alignment="center")
+with brand_col:
+    st.markdown("<div class='top-brand'>MCHBS<span class='top-brand-dot'>.</span></div>", unsafe_allow_html=True)
+with nav_col:
+    selected_nav = st.radio(
+        "Top Navigation",
+        list(NAV_OPTIONS.keys()),
+        horizontal=True,
+        index=list(NAV_OPTIONS.keys()).index(st.session_state.navbar_selection),
+        key="navbar_selection",
+        label_visibility="collapsed",
+    )
+with profile_col:
+    with st.popover("👤"):
+        st.markdown(f"**Signed in as** `{st.session_state.current_user}`")
+        if st.button("Logout", key="logout_in_profile"):
+            st.session_state.authenticated = False
+            st.session_state.current_user = ""
+            st.session_state.page = "Home Dashboard"
+            st.rerun()
+
+page = NAV_OPTIONS[selected_nav]
+st.session_state.page = page
+st.markdown("<div class='nav-divider'></div>", unsafe_allow_html=True)
 
 def set_page(target_page: str) -> None:
     st.session_state.page = target_page
+    nav_label = next(
+        (label for label, value in NAV_OPTIONS.items() if value == target_page),
+        "Home Dashboard",
+    )
+    st.session_state.navbar_selection = nav_label
 
 
 def list_dataset_files() -> list:
@@ -509,7 +568,7 @@ if page == "Home Dashboard":
         <div class="hero glow">
             <div class="pill">SYSTEM ONLINE</div>
             <div class="hero-title">Multi-Cloud Hybrid Backup Strategy</div>
-            <div class="hero-subtitle">Supply chain data resilience with redundancy, failover, and hybrid storage.</div>
+            <div class="hero-subtitle"></div>
             <div class="muted" style="margin-top:8px;">Last backup: {last_backup_time}</div>
         </div>
         """,
