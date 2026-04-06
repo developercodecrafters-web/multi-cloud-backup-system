@@ -376,7 +376,7 @@ def render_auth_gateway() -> None:
             login_tab, register_tab = st.tabs(["Login", "Register"])
 
             with login_tab:
-                with st.form("login_form"):
+                with st.form("login_form", enter_to_submit=False):
                     username = st.text_input("User Name", placeholder="e.g. username")
                     password = st.text_input("Password", type="password", placeholder="Your password")
                     submitted = st.form_submit_button("Login")
@@ -395,7 +395,7 @@ def render_auth_gateway() -> None:
                         st.rerun()
 
             with register_tab:
-                with st.form("register_form"):
+                with st.form("register_form", enter_to_submit=False):
                     new_username = st.text_input("Choose a User Name")
                     new_password = st.text_input("Create a Password", type="password")
                     confirm_password = st.text_input("Confirm Password", type="password")
@@ -450,6 +450,9 @@ page = st.radio(
     key="page",
     label_visibility="collapsed",
 )
+
+def set_page(target_page: str) -> None:
+    st.session_state.page = target_page
 
 
 def list_dataset_files() -> list:
@@ -555,10 +558,8 @@ if page == "Home Dashboard":
         st.markdown("<div class='section-title'>Quick Actions</div>", unsafe_allow_html=True)
         action_col = st.container()
         with action_col:
-            if st.button("Go to Start Backup"):
-                st.session_state.page = "Start Backup"
-            if st.button("Upload New Files"):
-                st.session_state.page = "Upload Supply Chain Files"
+            st.button("Go to Start Backup", on_click=set_page, args=("Start Backup",))
+            st.button("Upload New Files", on_click=set_page, args=("Upload Supply Chain Files",))
 
         st.write("")
         st.markdown("<div class='section-title'>Health Monitor</div>", unsafe_allow_html=True)
@@ -622,7 +623,7 @@ elif page == "Start Backup":
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        with st.form("backup_form"):
+        with st.form("backup_form", enter_to_submit=False):
             bucket_name = st.text_input("AWS S3 Bucket Name", placeholder="your-s3-bucket-name")
             s3_prefix = st.text_input("S3 Prefix (Optional)", value="supply-chain-backups")
             submitted = st.form_submit_button("Start Backup")
