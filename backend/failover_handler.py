@@ -8,8 +8,10 @@ from .logger import log_event
 def handle_backup(
     src_dir: str,
     local_dest: str,
-    cloud_bucket: str,
-    s3_prefix: str = "supply-chain-backups",
+    cloud_target: str,
+    cloud_prefix: str = "supply-chain-backups",
+    cloud_provider: str = "aws_s3",
+    cloud_auth_mode: str = "",
     cloud_even_if_local_success: bool = True,
 ) -> Dict[str, object]:
     """Run backup with failover logic.
@@ -34,7 +36,13 @@ def handle_backup(
     if local_success:
         log_event("Local Backup Success")
         if cloud_even_if_local_success:
-            cloud_result = perform_cloud_backup(src_dir, cloud_bucket, s3_prefix)
+            cloud_result = perform_cloud_backup(
+                src_dir=src_dir,
+                cloud_target=cloud_target,
+                cloud_prefix=cloud_prefix,
+                cloud_provider=cloud_provider,
+                cloud_auth_mode=cloud_auth_mode,
+            )
             result["cloud"] = {
                 "success": cloud_result["success"],
                 "files": cloud_result["files_uploaded"],
@@ -50,7 +58,13 @@ def handle_backup(
     log_event(f"Local Backup Failed: {local_error}")
     result["failover_used"] = True
 
-    cloud_result = perform_cloud_backup(src_dir, cloud_bucket, s3_prefix)
+    cloud_result = perform_cloud_backup(
+        src_dir=src_dir,
+        cloud_target=cloud_target,
+        cloud_prefix=cloud_prefix,
+        cloud_provider=cloud_provider,
+        cloud_auth_mode=cloud_auth_mode,
+    )
     result["cloud"] = {
         "success": cloud_result["success"],
         "files": cloud_result["files_uploaded"],
