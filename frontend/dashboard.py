@@ -33,7 +33,27 @@ st.markdown(
         }
 
         .block-container {
-            padding-top: 1rem;
+            padding-top: 0.35rem;
+        }
+
+        .top-brand {
+            color: #e8f1fb;
+            font-size: 38px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .top-brand-dot {
+            color: #ffd95a;
+        }
+
+        .nav-divider {
+            height: 2px;
+            margin: 8px 0 14px 0;
+            background: linear-gradient(90deg, rgba(255, 217, 90, 0.9) 0%, rgba(255, 217, 90, 0.2) 100%);
+            border-radius: 999px;
         }
 
         .hero {
@@ -249,6 +269,31 @@ st.markdown(
             color: #e6ecf8;
             font-weight: 600;
         }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] {
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label {
+            padding: 4px 8px;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+        }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+        }
+
+        div[data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label span {
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #eaf0ff;
+            font-weight: 700;
+        }
     </style>
     """,
     unsafe_allow_html=True,
@@ -376,7 +421,7 @@ def render_auth_gateway() -> None:
             login_tab, register_tab = st.tabs(["Login", "Register"])
 
             with login_tab:
-                with st.form("login_form"):
+                with st.form("login_form", enter_to_submit=False):
                     username = st.text_input("User Name", placeholder="e.g. username")
                     password = st.text_input("Password", type="password", placeholder="Your password")
                     submitted = st.form_submit_button("Login")
@@ -395,7 +440,7 @@ def render_auth_gateway() -> None:
                         st.rerun()
 
             with register_tab:
-                with st.form("register_form"):
+                with st.form("register_form", enter_to_submit=False):
                     new_username = st.text_input("Choose a User Name")
                     new_password = st.text_input("Create a Password", type="password")
                     confirm_password = st.text_input("Confirm Password", type="password")
@@ -420,36 +465,53 @@ if not st.session_state.authenticated:
     render_auth_gateway()
     st.stop()
 
-header_left, _, header_right = st.columns([8, 1, 1])
-with header_left:
-    st.markdown(
-        f"<div class='section-title' style='margin-top:6px;'>Signed in as {st.session_state.current_user}</div>",
-        unsafe_allow_html=True,
-    )
-with header_right:
-    if st.button("Logout"):
-        st.session_state.authenticated = False
-        st.session_state.current_user = ""
-        st.session_state.page = "Home Dashboard"
-        st.rerun()
+NAV_OPTIONS = {
+    "Home Dashboard": "Home Dashboard",
+    "Upload Chain Files": "Upload Supply Chain Files",
+    "Start Backup": "Start Backup",
+    "Backup Logs": "Backup Logs",
+    "Performance Metrics": "Performance Metrics",
+}
 
-st.markdown(
-    "<div class='section-title' style='margin-top:6px;'>Navigation</div>",
-    unsafe_allow_html=True,
+selected_label = next(
+    (label for label, value in NAV_OPTIONS.items() if value == st.session_state.page),
+    "Home Dashboard",
 )
-page = st.radio(
-    "Go to",
-    [
+if "navbar_selection" not in st.session_state:
+    st.session_state.navbar_selection = selected_label
+
+brand_col, nav_col, profile_col = st.columns([1.1, 5.0, 0.7], vertical_alignment="center")
+with brand_col:
+    st.markdown("<div class='top-brand'>MCHBS<span class='top-brand-dot'>.</span></div>", unsafe_allow_html=True)
+with nav_col:
+    selected_nav = st.radio(
+        "Top Navigation",
+        list(NAV_OPTIONS.keys()),
+        horizontal=True,
+        index=list(NAV_OPTIONS.keys()).index(st.session_state.navbar_selection),
+        key="navbar_selection",
+        label_visibility="collapsed",
+    )
+with profile_col:
+    with st.popover("👤"):
+        st.markdown(f"**Signed in as** `{st.session_state.current_user}`")
+        if st.button("Logout", key="logout_in_profile"):
+            st.session_state.authenticated = False
+            st.session_state.current_user = ""
+            st.session_state.page = "Home Dashboard"
+            st.rerun()
+
+page = NAV_OPTIONS[selected_nav]
+st.session_state.page = page
+st.markdown("<div class='nav-divider'></div>", unsafe_allow_html=True)
+
+def set_page(target_page: str) -> None:
+    st.session_state.page = target_page
+    nav_label = next(
+        (label for label, value in NAV_OPTIONS.items() if value == target_page),
         "Home Dashboard",
-        "Upload Supply Chain Files",
-        "Start Backup",
-        "Backup Logs",
-        "Performance Metrics",
-    ],
-    horizontal=True,
-    key="page",
-    label_visibility="collapsed",
-)
+    )
+    st.session_state.navbar_selection = nav_label
 
 
 def list_dataset_files() -> list:
@@ -506,7 +568,7 @@ if page == "Home Dashboard":
         <div class="hero glow">
             <div class="pill">SYSTEM ONLINE</div>
             <div class="hero-title">Multi-Cloud Hybrid Backup Strategy</div>
-            <div class="hero-subtitle">Supply chain data resilience with redundancy, failover, and hybrid storage.</div>
+            <div class="hero-subtitle"></div>
             <div class="muted" style="margin-top:8px;">Last backup: {last_backup_time}</div>
         </div>
         """,
@@ -535,7 +597,7 @@ if page == "Home Dashboard":
                 <div class="muted">Local backup runs first for speed. Cloud backup ensures redundancy and off-site resilience.</div>
                 <div style="margin-top:12px;">
                     <span class="badge">Local Storage</span>
-                    <span class="badge" style="margin-left:6px;">AWS S3</span>
+                    <span class="badge" style="margin-left:6px;">Cloud Storage</span>
                     <span class="badge" style="margin-left:6px;">Failover Ready</span>
                 </div>
             </div>
@@ -555,10 +617,8 @@ if page == "Home Dashboard":
         st.markdown("<div class='section-title'>Quick Actions</div>", unsafe_allow_html=True)
         action_col = st.container()
         with action_col:
-            if st.button("Go to Start Backup"):
-                st.session_state.page = "Start Backup"
-            if st.button("Upload New Files"):
-                st.session_state.page = "Upload Supply Chain Files"
+            st.button("Go to Start Backup", on_click=set_page, args=("Start Backup",))
+            st.button("Upload New Files", on_click=set_page, args=("Upload Supply Chain Files",))
 
         st.write("")
         st.markdown("<div class='section-title'>Health Monitor</div>", unsafe_allow_html=True)
@@ -622,17 +682,38 @@ elif page == "Start Backup":
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        with st.form("backup_form"):
-            bucket_name = st.text_input("AWS S3 Bucket Name", placeholder="your-s3-bucket-name")
-            s3_prefix = st.text_input("S3 Prefix (Optional)", value="supply-chain-backups")
+        with st.form("backup_form", enter_to_submit=False):
+            provider_label = st.radio("Cloud Provider", ["AWS S3", "Google Drive"], horizontal=True)
+            if provider_label == "AWS S3":
+                cloud_target = st.text_input("AWS S3 Bucket Name", placeholder="your-s3-bucket-name")
+                cloud_prefix = st.text_input("S3 Prefix (Optional)", value="supply-chain-backups")
+                cloud_provider = "aws_s3"
+                cloud_auth_mode = ""
+                target_error = "Please provide an S3 bucket name."
+            else:
+                cloud_target = st.text_input("Google Drive Folder ID", placeholder="your-google-drive-folder-id")
+                google_auth_label = st.radio(
+                    "Google Drive Auth",
+                    ["OAuth Client", "Service Account"],
+                    horizontal=True,
+                )
+                cloud_prefix = ""
+                cloud_provider = "google_drive"
+                cloud_auth_mode = "oauth" if google_auth_label == "OAuth Client" else "service_account"
+                target_error = "Please provide a Google Drive folder ID."
             submitted = st.form_submit_button("Start Backup")
 
         if submitted:
-            if not bucket_name:
-                st.error("Please provide an S3 bucket name.")
+            if not cloud_target:
+                st.error(target_error)
             else:
                 with st.spinner("Running backup..."):
-                    result = run_backup(cloud_bucket=bucket_name, s3_prefix=s3_prefix)
+                    result = run_backup(
+                        cloud_target=cloud_target,
+                        cloud_provider=cloud_provider,
+                        cloud_prefix=cloud_prefix,
+                        cloud_auth_mode=cloud_auth_mode,
+                    )
                     time.sleep(0.5)
 
                 local = result["result"]["local"]
@@ -660,7 +741,7 @@ elif page == "Start Backup":
             <div class="panel">
                 <div class="muted">Sequence:</div>
                 <div class="muted">1. Local backup to `backup/local_backup`</div>
-                <div class="muted">2. Cloud backup to AWS S3</div>
+                <div class="muted">2. Cloud backup to selected provider (AWS S3 or Google Drive)</div>
                 <div class="muted">3. Failover to cloud if local fails</div>
             </div>
             """,
@@ -672,10 +753,16 @@ elif page == "Start Backup":
         st.markdown(
             """
             <div class="panel">
-                <div class="muted">Set AWS credentials via environment variables:</div>
+                <div class="muted">AWS S3 env vars:</div>
                 <div class="muted">AWS_ACCESS_KEY_ID</div>
                 <div class="muted">AWS_SECRET_ACCESS_KEY</div>
                 <div class="muted">AWS_DEFAULT_REGION</div>
+                <div class="muted" style="margin-top:8px;">Google Drive (OAuth) env vars:</div>
+                <div class="muted">GOOGLE_DRIVE_OAUTH_CLIENT_SECRET_FILE</div>
+                <div class="muted">GOOGLE_DRIVE_OAUTH_TOKEN_FILE (optional)</div>
+                <div class="muted">GOOGLE_DRIVE_OAUTH_LOCAL_SERVER_PORT (optional, default 8080)</div>
+                <div class="muted" style="margin-top:8px;">Google Drive (Service Account) env var:</div>
+                <div class="muted">GOOGLE_DRIVE_SERVICE_ACCOUNT_FILE</div>
             </div>
             """,
             unsafe_allow_html=True,

@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+.env
+google_drive_token.json
+oauth-client.json

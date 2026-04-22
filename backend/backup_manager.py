@@ -13,14 +13,21 @@ DATASET_DIR = os.path.join(PROJECT_ROOT, "dataset")
 LOCAL_BACKUP_DIR = os.path.join(PROJECT_ROOT, "backup", "local_backup")
 
 
-def run_backup(cloud_bucket: str, s3_prefix: str = "supply-chain-backups") -> Dict[str, object]:
+def run_backup(
+    cloud_target: str,
+    cloud_provider: str = "aws_s3",
+    cloud_prefix: str = "supply-chain-backups",
+    cloud_auth_mode: str = "",
+) -> Dict[str, object]:
     start = time.time()
 
     result = handle_backup(
         src_dir=DATASET_DIR,
         local_dest=LOCAL_BACKUP_DIR,
-        cloud_bucket=cloud_bucket,
-        s3_prefix=s3_prefix,
+        cloud_target=cloud_target,
+        cloud_prefix=cloud_prefix,
+        cloud_provider=cloud_provider,
+        cloud_auth_mode=cloud_auth_mode,
         cloud_even_if_local_success=True,
     )
 
