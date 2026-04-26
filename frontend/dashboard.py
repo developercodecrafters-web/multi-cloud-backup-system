@@ -4,15 +4,18 @@ import time
 from datetime import datetime
 
 import streamlit as st
+from dotenv import load_dotenv
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(PROJECT_ROOT)
+load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 
 from backend.backup_manager import run_backup
 from backend.performance_monitor import load_metrics, compute_derived_metrics
 from backend.logger import LOG_FILE
 
 DATASET_DIR = os.path.join(PROJECT_ROOT, "dataset")
+DEFAULT_GOOGLE_DRIVE_FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "").strip()
 
 
 st.set_page_config(page_title="Multi-Cloud Hybrid Backup", layout="wide")
@@ -682,26 +685,22 @@ elif page == "Start Backup":
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        with st.form("backup_form", enter_to_submit=False):
-            provider_label = st.radio("Cloud Provider", ["AWS S3", "Google Drive"], horizontal=True)
-            if provider_label == "AWS S3":
-                cloud_target = st.text_input("AWS S3 Bucket Name", placeholder="your-s3-bucket-name")
-                cloud_prefix = st.text_input("S3 Prefix (Optional)", value="supply-chain-backups")
-                cloud_provider = "aws_s3"
-                cloud_auth_mode = ""
-                target_error = "Please provide an S3 bucket name."
-            else:
-                cloud_target = st.text_input("Google Drive Folder ID", placeholder="your-google-drive-folder-id")
-                google_auth_label = st.radio(
-                    "Google Drive Auth",
-                    ["OAuth Client", "Service Account"],
-                    horizontal=True,
-                )
-                cloud_prefix = ""
-                cloud_provider = "google_drive"
-                cloud_auth_mode = "oauth" if google_auth_label == "OAuth Client" else "service_account"
-                target_error = "Please provide a Google Drive folder ID."
-            submitted = st.form_submit_button("Start Backup")
+        st.markdown("**Cloud Provider**")
+        st.caption("Google Drive")
+
+        cloud_target = DEFAULT_GOOGLE_DRIVE_FOLDER_ID
+        google_auth_label = st.radio(
+            "Google Drive Auth",
+            ["OAuth Client", "Service Account"],
+            horizontal=True,
+            key="backup_google_auth_mode",
+        )
+        cloud_prefix = ""
+        cloud_provider = "google_drive"
+        cloud_auth_mode = "oauth" if google_auth_label == "OAuth Client" else "service_account"
+        target_error = "Missing GOOGLE_DRIVE_FOLDER_ID in .env."
+
+        submitted = st.button("Start Backup", key="start_backup_btn")
 
         if submitted:
             if not cloud_target:
@@ -741,33 +740,12 @@ elif page == "Start Backup":
             <div class="panel">
                 <div class="muted">Sequence:</div>
                 <div class="muted">1. Local backup to `backup/local_backup`</div>
-                <div class="muted">2. Cloud backup to selected provider (AWS S3 or Google Drive)</div>
+                <div class="muted">2. Cloud backup to Google Drive</div>
                 <div class="muted">3. Failover to cloud if local fails</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-
-        st.write("")
-        st.markdown("<div class='section-title'>Credentials</div>", unsafe_allow_html=True)
-        st.markdown(
-            """
-            <div class="panel">
-                <div class="muted">AWS S3 env vars:</div>
-                <div class="muted">AWS_ACCESS_KEY_ID</div>
-                <div class="muted">AWS_SECRET_ACCESS_KEY</div>
-                <div class="muted">AWS_DEFAULT_REGION</div>
-                <div class="muted" style="margin-top:8px;">Google Drive (OAuth) env vars:</div>
-                <div class="muted">GOOGLE_DRIVE_OAUTH_CLIENT_SECRET_FILE</div>
-                <div class="muted">GOOGLE_DRIVE_OAUTH_TOKEN_FILE (optional)</div>
-                <div class="muted">GOOGLE_DRIVE_OAUTH_LOCAL_SERVER_PORT (optional, default 8080)</div>
-                <div class="muted" style="margin-top:8px;">Google Drive (Service Account) env var:</div>
-                <div class="muted">GOOGLE_DRIVE_SERVICE_ACCOUNT_FILE</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
 
 elif page == "Backup Logs":
     st.markdown("<div class='hero'><div class='hero-title'>Backup Logs</div><div class='hero-subtitle'>Operational history and events.</div></div>", unsafe_allow_html=True)
