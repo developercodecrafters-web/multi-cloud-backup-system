@@ -1,4 +1,0 @@
-warehouse,sku,on_hand,reorder_point
-WH-A,SKU-001,1200,400
-WH-B,SKU-002,850,300
-WH-C,SKU-003,640,250

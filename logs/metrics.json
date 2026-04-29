@@ -1,8 +1,8 @@
 {
-  "total_backups": 11,
-  "success_count": 11,
+  "total_backups": 0,
+  "success_count": 0,
   "failover_count": 0,
-  "total_files": 69,
-  "total_time": 91.50999999999999,
-  "last_backup_time": "2026-04-22 22:59:45"
+  "total_files": 0,
+  "total_time": 0,
+  "last_backup_time": "2026-01-01 00:00:00"
 }

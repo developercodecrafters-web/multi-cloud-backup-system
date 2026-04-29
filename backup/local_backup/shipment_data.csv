@@ -1,5 +1,0 @@
-﻿shipment_id,carrier,origin,destination,status,eta
-SHP-001,TransLogix,Chicago,Denver,In Transit,2026-03-15
-SHP-002,NorthStar Freight,Dallas,Atlanta,Delivered,2026-03-10
-SHP-003,BlueRoute,Seattle,Los Angeles,Delayed,2026-03-16
-SHP-004,EastRail,New York,Boston,In Transit,2026-03-13
